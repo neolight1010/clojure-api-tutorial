@@ -1,7 +1,10 @@
 (ns neo-api.core
-  (:require [neo-api.config :as config]
-            [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]))
+  (:require
+   [com.stuartsierra.component :as component]
+   [io.pedestal.http :as http]
+   [io.pedestal.http.route :as route]
+   [neo-api.components.example-component :as example-component]
+   [neo-api.config :as config]))
 
 (defn -respond-hello [_request]
   {:status 200 :body "Hello, world!"})
@@ -20,9 +23,19 @@
 (defn -start-server [config]
   (http/start (-create-server config)))
 
+(defn api-system [config]
+  (component/system-map
+   :example-component (example-component/new-example-component config)))
+
 (defn -main
   []
-  (let [config  (config/read-config)]
+  (let [system  (->
+                 (config/read-config)
+                 (api-system)
+                 (component/start-system))]
     (println "🚀 starting server")
-    (println "config:" config)
-    (-start-server config)))
+    (println "config:" system)
+
+    (.addShutdownHook
+     (Runtime/getRuntime)
+     (new Thread #(component/stop-system system)))))
