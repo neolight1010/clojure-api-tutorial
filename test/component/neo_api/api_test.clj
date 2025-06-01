@@ -1,7 +1,8 @@
 (ns component.neo-api.api-test
   (:require [clojure.test :as test]
             [neo-api.core :as core]
-            [com.stuartsierra.component :as component]))
+            [com.stuartsierra.component :as component]
+            [clj-http.client :as client]))
 
 (defmacro with-system
   [[bound-var binding-expr] & body]
@@ -13,5 +14,9 @@
 
 (test/deftest greeting-test
   (declare sut)
-  (with-system [sut (core/api-system {:server {:port 8088}})]
-    (test/is (= 0 1))))
+  (with-system
+    [sut (core/api-system {:server {:port 8088}})]
+    (test/is (= {:body "Hello, world!" :status 200}
+                (-> (str "http://localhost:" 8088 "/greet")
+                    (client/get)
+                    (select-keys [:body :status]))))))
