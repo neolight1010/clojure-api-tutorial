@@ -2,6 +2,13 @@
         io.pedestal/pedestal.jetty {:mvn/version "0.7.2"}
         org.slf4j/slf4j-simple {:mvn/version "2.0.10"}
         com.stuartsierra/component {:mvn/version "1.1.0"}
-        com.stuartsierra/component.repl {:mvn/version "0.2.0"}}
+        com.stuartsierra/component.repl {:mvn/version "0.2.0"}
+        org.clojure/core.async {:mvn/version "1.8.741"}}
 
- :paths ["src" "resources" "dev"]}
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+         :main-opts ["-m" "cognitect.test-runner"]
+         :exec-fn cognitect.test-runner.api/test}}
+
+ :paths ["src" "resources" "dev" "test"]}
