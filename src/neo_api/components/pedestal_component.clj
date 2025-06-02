@@ -1,16 +1,34 @@
 (ns neo-api.components.pedestal-component
   (:require [com.stuartsierra.component :as component]
             [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]))
+            [io.pedestal.http.route :as route]
+            [neo-api.components.in-memory-state-component :as in-memory-state-component]))
 
 (defn -respond-hello [_request]
   {:status 200 :body "Hello, world!"})
 
+(defn response [status body]
+  {:status status :body body :headers nil})
+
+(def ok (partial response 200))
+
+(def get-todo-handler
+  {:name :echo
+   :enter
+   (fn [context]
+     (let [_request (:request context)
+           response (ok context)]
+       (assoc context :response response)))})
+
 (def -routes
   (route/expand-routes
-   #{["/greet" :get -respond-hello :route-name :greet]}))
+   #{["/greet" :get -respond-hello :route-name :greet]
+     ["/todo/:list-id" :get get-todo-handler :route-name :get-todo]}))
 
-(defrecord PedestalComponent [config example-component]
+(defrecord PedestalComponent
+           [config
+            example-component
+            in-memory-state-component]
   component/Lifecycle
 
   (start [component]

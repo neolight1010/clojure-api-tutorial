@@ -20,3 +20,14 @@
                 (-> (str "http://localhost:" 8088 "/greet")
                     (client/get)
                     (select-keys [:body :status]))))))
+
+(test/deftest get-todo-test
+  (declare sut)
+
+  (let [todo-id (random-uuid)]
+    (with-system
+      [sut (core/api-system {:server {:port 8088}})]
+      (test/is (= {:body "Hello, world!" :status 200}
+                  (-> (str "http://localhost:" 8088 "/todo/" todo-id)
+                      (client/get)
+                      (select-keys [:body :status])))))))
