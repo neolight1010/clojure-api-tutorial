@@ -20,7 +20,7 @@
        (first)))
 
 (def get-todo-handler
-  {:name :echo
+  {:name :get-todo-handler
    :enter
    (fn [{:keys [dependencies] :as context}]
 
