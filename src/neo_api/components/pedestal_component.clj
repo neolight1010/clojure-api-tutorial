@@ -1,8 +1,9 @@
 (ns neo-api.components.pedestal-component
-  (:require [com.stuartsierra.component :as component]
-            [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]
-            [neo-api.components.in-memory-state-component :as in-memory-state-component]))
+  (:require
+   [com.stuartsierra.component :as component]
+   [io.pedestal.http :as http]
+   [io.pedestal.http.route :as route]
+   [io.pedestal.interceptor :as interceptor]))
 
 (defn -respond-hello [_request]
   {:status 200 :body "Hello, world!"})
@@ -25,6 +26,12 @@
    #{["/greet" :get -respond-hello :route-name :greet]
      ["/todo/:list-id" :get get-todo-handler :route-name :get-todo]}))
 
+(defn -inject-dependencies
+  [dependencies]
+  (interceptor/interceptor
+   {:name ::inject-dependencies
+    :enter (fn [context] (assoc context :dependencies dependencies))}))
+
 (defrecord PedestalComponent
            [config
             example-component
@@ -38,6 +45,8 @@
                       ::http/type :jetty
                       ::http/join? false
                       ::http/port (-> config :server :port)}
+                     (http/default-interceptors)
+                     (update ::http/interceptors concat [(-inject-dependencies component)])
                      (http/create-server)
                      (http/start))]
       (assoc component :server server)))
