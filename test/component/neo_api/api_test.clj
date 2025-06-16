@@ -4,7 +4,9 @@
    [clojure.test :as test]
    [com.stuartsierra.component :as component]
    [neo-api.components.pedestal-component :refer [url-for]]
-   [neo-api.core :as core]))
+   [neo-api.core :as core])
+  (:import
+   [java.net ServerSocket]))
 
 (defmacro with-system
   [[bound-var binding-expr] & body]
@@ -26,10 +28,14 @@
   [sut name & options]
   (sut->url sut (apply url-for name options)))
 
+(defn get-free-port
+  []
+  (with-open [socket (ServerSocket. 0)] (.getLocalPort socket)))
+
 (test/deftest greeting-test
   (declare sut)
   (with-system
-    [sut (core/api-system {:server {:port 8088}})]
+    [sut (core/api-system {:server {:port (get-free-port)}})]
     (test/is (= {:body "Hello, world!" :status 200}
                 (-> (sut->url-for sut :greet)
                     (client/get)
@@ -43,7 +49,7 @@
                 :name "todo 1"
                 :items [{:id (random-uuid) :name "item"}]}]
     (with-system
-      [sut (core/api-system {:server {:port 8088}})]
+      [sut (core/api-system {:server {:port (get-free-port)}})]
       (reset! (-> sut :in-memory-state-component :state-atom) [todo-1])
 
       (test/is (= {:body (pr-str todo-1) :status 200}
