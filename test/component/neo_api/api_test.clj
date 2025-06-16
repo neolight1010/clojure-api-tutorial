@@ -1,8 +1,10 @@
 (ns component.neo-api.api-test
-  (:require [clojure.test :as test]
-            [neo-api.core :as core]
-            [com.stuartsierra.component :as component]
-            [clj-http.client :as client]))
+  (:require
+   [clj-http.client :as client]
+   [clojure.test :as test]
+   [com.stuartsierra.component :as component]
+   [neo-api.components.pedestal-component :refer [url-for]]
+   [neo-api.core :as core]))
 
 (defmacro with-system
   [[bound-var binding-expr] & body]
@@ -12,12 +14,24 @@
        (finally
          (component/stop ~bound-var)))))
 
+(defn sut->url
+  [sut path]
+  (str "http://localhost:"
+       (-> sut :pedestal-component :config :server :port)
+       (if (= (first path) "/")
+         path
+         (str "/" path))))
+
+(defn sut->url-for
+  [sut name & options]
+  (sut->url sut (apply url-for name options)))
+
 (test/deftest greeting-test
   (declare sut)
   (with-system
     [sut (core/api-system {:server {:port 8088}})]
     (test/is (= {:body "Hello, world!" :status 200}
-                (-> (str "http://localhost:" 8088 "/greet")
+                (-> (sut->url-for sut :greet)
                     (client/get)
                     (select-keys [:body :status]))))))
 
@@ -33,13 +47,13 @@
       (reset! (-> sut :in-memory-state-component :state-atom) [todo-1])
 
       (test/is (= {:body (pr-str todo-1) :status 200}
-                  (-> (str "http://localhost:" 8088 "/todo/" todo-id-1)
+                  (-> (sut->url-for sut :get-todo {:path-params {:todo-id todo-id-1}})
                       (client/get)
                       (select-keys [:body :status]))))
 
       (test/testing "empty body is returned for random todo-id"
         (= {:body "" :status 200}
-           (-> (str "http://localhost:" 8088 "/todo/" (random-uuid))
+           (-> (sut->url-for sut :get-todo {:path-params {:todo-id (random-uuid)}})
                (client/get)
                (select-keys [:body :status])))))))
 
