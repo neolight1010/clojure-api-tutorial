@@ -13,18 +13,30 @@
 
 (def ok (partial response 200))
 
+(defn get-todo-by-id [{:keys [in-memory-state-component]} todo-id]
+  (->> @(:state-atom in-memory-state-component)
+       (filter (fn [todo]
+                 (= todo-id (:id todo))))
+       (first)))
+
 (def get-todo-handler
   {:name :echo
    :enter
-   (fn [context]
-     (let [_request (:request context)
-           response (ok context)]
+   (fn [{:keys [dependencies] :as context}]
+
+     (let [{:keys [request]} context
+           response (ok
+                     (get-todo-by-id dependencies (->
+                                                   request
+                                                   :path-params
+                                                   :todo-id
+                                                   parse-uuid)))]
        (assoc context :response response)))})
 
 (def -routes
   (route/expand-routes
    #{["/greet" :get -respond-hello :route-name :greet]
-     ["/todo/:list-id" :get get-todo-handler :route-name :get-todo]}))
+     ["/todo/:todo-id" :get get-todo-handler :route-name :get-todo]}))
 
 (defn -inject-dependencies
   [dependencies]
