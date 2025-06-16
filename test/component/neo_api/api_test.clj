@@ -31,7 +31,14 @@
     (with-system
       [sut (core/api-system {:server {:port 8088}})]
       (reset! (-> sut :in-memory-state-component :state-atom) [todo-1])
+
       (test/is (= {:body (pr-str todo-1) :status 200}
                   (-> (str "http://localhost:" 8088 "/todo/" todo-id-1)
                       (client/get)
-                      (select-keys [:body :status])))))))
+                      (select-keys [:body :status]))))
+
+      (test/testing "empty body is returned for random todo-id"
+        (= {:body "" :status 200}
+           (-> (str "http://localhost:" 8088 "/todo/" (random-uuid))
+               (client/get)
+               (select-keys [:body :status])))))))
