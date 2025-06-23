@@ -3,7 +3,8 @@
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
    [io.pedestal.http.route :as route]
-   [io.pedestal.interceptor :as interceptor]))
+   [io.pedestal.interceptor :as interceptor]
+   [io.pedestal.http.content-negotiation :as content-negotiation]))
 
 (defn -respond-hello [_request]
   {:status 200 :body "Hello, world!"})
@@ -46,6 +47,9 @@
    {:name ::inject-dependencies
     :enter (fn [context] (assoc context :dependencies dependencies))}))
 
+(def content-negotiation-interceptor
+  (content-negotiation/negotiate-content ["application/json"]))
+
 (defrecord PedestalComponent
            [config
             example-component
@@ -60,7 +64,10 @@
                       ::http/join? false
                       ::http/port (-> config :server :port)}
                      (http/default-interceptors)
-                     (update ::http/interceptors concat [(-inject-dependencies component)])
+                     (update
+                      ::http/interceptors concat
+                      [(-inject-dependencies component)
+                       content-negotiation-interceptor])
                      (http/create-server)
                      (http/start))]
       (assoc component :server server)))

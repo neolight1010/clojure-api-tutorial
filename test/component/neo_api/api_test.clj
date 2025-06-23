@@ -41,6 +41,16 @@
                     (client/get)
                     (select-keys [:body :status]))))))
 
+(test/deftest content-negotiation-test
+  (test/testing "only application/json is accepted")
+  (declare sut)
+  (with-system
+    [sut (core/api-system {:server {:port (get-free-port)}})]
+    (test/is (= {:body "Not Acceptable" :status 406}
+                (-> (sut->url-for sut :greet)
+                    (client/get {:accept :edn :throw-exceptions false})
+                    (select-keys [:body :status]))))))
+
 (test/deftest get-todo-test
   (declare sut)
 
