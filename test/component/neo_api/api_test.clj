@@ -54,17 +54,17 @@
 (test/deftest get-todo-test
   (declare sut)
 
-  (let [todo-id-1 (random-uuid)
+  (let [todo-id-1 (str (random-uuid))
         todo-1 {:id todo-id-1
                 :name "todo 1"
-                :items [{:id (random-uuid) :name "item"}]}]
+                :items [{:id (str (random-uuid)) :name "item"}]}]
     (with-system
       [sut (core/api-system {:server {:port (get-free-port)}})]
       (reset! (-> sut :in-memory-state-component :state-atom) [todo-1])
 
-      (test/is (= {:body (pr-str todo-1) :status 200}
+      (test/is (= {:body todo-1 :status 200}
                   (-> (sut->url-for sut :get-todo {:path-params {:todo-id todo-id-1}})
-                      (client/get)
+                      (client/get {:as :json})
                       (select-keys [:body :status]))))
 
       (test/testing "empty body is returned for random todo-id"
@@ -72,5 +72,3 @@
            (-> (sut->url-for sut :get-todo {:path-params {:todo-id (random-uuid)}})
                (client/get)
                (select-keys [:body :status])))))))
-
-
