@@ -68,7 +68,7 @@
                       (select-keys [:body :status]))))
 
       (test/testing "empty body is returned for random todo-id"
-        (= {:body "" :status 200}
+        (= {:body "" :status 404}
            (-> (sut->url-for sut :get-todo {:path-params {:todo-id (random-uuid)}})
-               (client/get)
+               (client/get {:throw-exceptions false})
                (select-keys [:body :status])))))))

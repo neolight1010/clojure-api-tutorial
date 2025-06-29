@@ -10,10 +10,17 @@
 (defn -respond-hello [_request]
   {:status 200 :body "Hello, world!"})
 
-(defn response [status body]
-  {:status status :body body :headers {"Content-Type" "application/json"}})
+(defn response
+  ([status]
+   (response status nil))
+  ([status body]
+   (merge
+    {:status status :body body :headers {"Content-Type" "application/json"}}
+    (when body {:body body}))))
 
 (def ok (partial response 200))
+
+(def not-found (partial response 404))
 
 (defn get-todo-by-id [{:keys [in-memory-state-component]} todo-id]
   (->> @(:state-atom in-memory-state-component)
@@ -31,7 +38,9 @@
                                               request
                                               :path-params
                                               :todo-id))
-           response (ok (json/encode todo))]
+           response (if todo
+                      (ok (json/encode todo))
+                      (not-found))]
        (assoc context :response response)))})
 
 (def -routes
